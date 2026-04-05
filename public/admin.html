@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin - Math Arcade</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,sans-serif;background:#0f0f1a;color:#fff;min-height:100vh}
+.container{max-width:800px;margin:0 auto;padding:20px}
+h1{font-size:24px;margin-bottom:20px}
+h2{font-size:18px;margin:24px 0 12px;color:#7C4DFF}
+
+/* Login */
+.login-box{background:rgba(255,255,255,0.05);border-radius:16px;padding:32px;max-width:400px;margin:80px auto;text-align:center}
+.login-box h1{margin-bottom:16px}
+.login-box input{width:100%;padding:14px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:16px;margin-bottom:12px}
+.login-box input:focus{outline:none;border-color:#7C4DFF}
+
+/* Buttons */
+.btn{padding:12px 20px;border-radius:10px;border:none;font-size:15px;font-weight:600;cursor:pointer;transition:all 0.2s}
+.btn:active{transform:scale(0.96)}
+.btn-primary{background:#7C4DFF;color:#fff;width:100%}
+.btn-green{background:#00BFA5;color:#fff}
+.btn-red{background:#FF4444;color:#fff;font-size:13px;padding:6px 12px}
+.btn-small{font-size:13px;padding:8px 14px}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+.stat{background:rgba(255,255,255,0.05);border-radius:12px;padding:16px;text-align:center}
+.stat .num{font-size:28px;font-weight:700;color:#00BFA5}
+.stat .lbl{font-size:12px;color:rgba(255,255,255,0.4);margin-top:4px}
+
+/* Form */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:4px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:15px;font-family:inherit}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#7C4DFF}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* Table */
+.q-list{margin-top:12px}
+.q-item{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.q-item .q-text{flex:1;min-width:200px}
+.q-item .q-text .q-question{font-size:15px;font-weight:600}
+.q-item .q-text .q-meta{font-size:12px;color:rgba(255,255,255,0.4);margin-top:4px}
+.q-item .q-answer{font-size:18px;font-weight:700;color:#00BFA5;min-width:60px;text-align:center}
+.q-actions{display:flex;gap:6px}
+
+/* Tabs */
+.tabs{display:flex;gap:8px;margin-bottom:20px}
+.tab{padding:10px 18px;border-radius:10px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);border:none;font-size:14px;font-weight:600;cursor:pointer}
+.tab.active{background:rgba(124,77,255,0.2);color:#7C4DFF}
+
+/* Bulk */
+.bulk-area{width:100%;min-height:150px;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-family:monospace;font-size:13px;resize:vertical}
+.help-text{font-size:12px;color:rgba(255,255,255,0.3);margin:8px 0}
+
+.empty{text-align:center;padding:40px;color:rgba(255,255,255,0.3)}
+.msg{padding:10px 16px;border-radius:10px;margin-bottom:12px;font-size:14px}
+.msg-ok{background:rgba(0,191,165,0.15);color:#00BFA5}
+.msg-err{background:rgba(255,68,68,0.15);color:#FF4444}
+.hidden{display:none}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginView">
+  <div class="login-box">
+    <h1>🔐 Admin Math Arcade</h1>
+    <input type="password" id="passInput" placeholder="Password admin..." onkeyup="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-primary" onclick="doLogin()">Masuk</button>
+    <div id="loginMsg" style="margin-top:12px"></div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminView" class="hidden">
+  <div class="container">
+    <h1>🎮 Admin Math Arcade</h1>
+    
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat"><div class="num" id="statPlayers">-</div><div class="lbl">Pemain</div></div>
+      <div class="stat"><div class="num" id="statVouchers">-</div><div class="lbl">Total Voucher</div></div>
+      <div class="stat"><div class="num" id="statToday">-</div><div class="lbl">Voucher Hari Ini</div></div>
+      <div class="stat"><div class="num" id="statQuestions">-</div><div class="lbl">Soal Custom</div></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('add')">➕ Tambah Soal</button>
+      <button class="tab" onclick="showTab('bulk')">📋 Bulk Import</button>
+      <button class="tab" onclick="showTab('list')">📝 Daftar Soal</button>
+    </div>
+
+    <div id="message"></div>
+
+    <!-- Add Single Question -->
+    <div id="tabAdd">
+      <div class="form-group">
+        <label>Soal (tulis tanda = ? untuk jawaban)</label>
+        <input type="text" id="fQuestion" placeholder="Contoh: 15 × 8 = ?" >
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Jawaban (angka)</label>
+          <input type="number" id="fAnswer" placeholder="120" step="any">
+        </div>
+        <div class="form-group">
+          <label>Kategori</label>
+          <select id="fCategory">
+            <option value="bilangan">Bilangan</option>
+            <option value="pecahan">Pecahan</option>
+            <option value="aljabar">Aljabar</option>
+            <option value="geometri">Geometri</option>
+            <option value="umum">Umum</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tingkat Kesulitan</label>
+        <select id="fDifficulty">
+          <option value="1">1 - Mudah (Level 1-3)</option>
+          <option value="2">2 - Sedang (Level 4-6)</option>
+          <option value="3">3 - Sulit (Level 7+)</option>
+        </select>
+      </div>
+      <button class="btn btn-green" onclick="addQuestion()" style="width:100%">➕ Tambah Soal</button>
+    </div>
+
+    <!-- Bulk Import -->
+    <div id="tabBulk" class="hidden">
+      <p class="help-text">Masukkan soal dalam format JSON. Setiap soal butuh "question" dan "answer". Opsional: "category" dan "difficulty".</p>
+      <textarea class="bulk-area" id="bulkInput" placeholder='[
+  { "question": "25 + 37 = ?", "answer": 62, "category": "bilangan", "difficulty": 1 },
+  { "question": "Luas persegi sisi 9 = ?", "answer": 81, "category": "geometri", "difficulty": 2 }
+]'></textarea>
+      <button class="btn btn-green" onclick="bulkImport()" style="width:100%;margin-top:12px">📥 Import Soal</button>
+    </div>
+
+    <!-- Questions List -->
+    <div id="tabList" class="hidden">
+      <div id="questionList"><div class="empty">Memuat...</div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin + '/api';
+let password = '';
+
+function doLogin() {
+  password = document.getElementById('passInput').value;
+  fetch(`${API}/admin/stats?password=${encodeURIComponent(password)}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('loginView').classList.add('hidden');
+        document.getElementById('adminView').classList.remove('hidden');
+        loadStats(data.stats);
+        loadQuestions();
+      } else {
+        document.getElementById('loginMsg').innerHTML = '<div class="msg msg-err">Password salah!</div>';
+      }
+    })
+    .catch(() => {
+      document.getElementById('loginMsg').innerHTML = '<div class="msg msg-err">Gagal konek ke server</div>';
+    });
+}
+
+function loadStats(stats) {
+  document.getElementById('statPlayers').textContent = stats.total_players;
+  document.getElementById('statVouchers').textContent = stats.total_vouchers;
+  document.getElementById('statToday').textContent = stats.today_vouchers;
+  document.getElementById('statQuestions').textContent = stats.custom_questions;
+}
+
+function showTab(tab) {
+  document.querySelectorAll('.tabs .tab').forEach((t,i) => {
+    t.classList.toggle('active', ['add','bulk','list'][i] === tab);
+  });
+  document.getElementById('tabAdd').classList.toggle('hidden', tab !== 'add');
+  document.getElementById('tabBulk').classList.toggle('hidden', tab !== 'bulk');
+  document.getElementById('tabList').classList.toggle('hidden', tab !== 'list');
+  if (tab === 'list') loadQuestions();
+}
+
+function showMsg(text, ok) {
+  document.getElementById('message').innerHTML = `<div class="msg ${ok ? 'msg-ok' : 'msg-err'}">${text}</div>`;
+  setTimeout(() => { document.getElementById('message').innerHTML = ''; }, 4000);
+}
+
+function addQuestion() {
+  const question = document.getElementById('fQuestion').value.trim();
+  const answer = document.getElementById('fAnswer').value;
+  const category = document.getElementById('fCategory').value;
+  const difficulty = document.getElementById('fDifficulty').value;
+
+  if (!question || answer === '') {
+    showMsg('Isi soal dan jawaban!', false);
+    return;
+  }
+
+  fetch(`${API}/admin/questions?password=${encodeURIComponent(password)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+    body: JSON.stringify({ question, answer: parseFloat(answer), category, difficulty: parseInt(difficulty) })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showMsg('Soal berhasil ditambah!', true);
+        document.getElementById('fQuestion').value = '';
+        document.getElementById('fAnswer').value = '';
+        refreshStats();
+      } else {
+        showMsg(data.error, false);
+      }
+    })
+    .catch(() => showMsg('Gagal konek ke server', false));
+}
+
+function bulkImport() {
+  const raw = document.getElementById('bulkInput').value.trim();
+  let questions;
+  try {
+    questions = JSON.parse(raw);
+  } catch (e) {
+    showMsg('Format JSON tidak valid! Periksa lagi.', false);
+    return;
+  }
+  if (!Array.isArray(questions)) {
+    showMsg('Harus berupa array [ {...}, {...} ]', false);
+    return;
+  }
+
+  fetch(`${API}/admin/questions/bulk?password=${encodeURIComponent(password)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+    body: JSON.stringify({ questions })
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        showMsg(`${data.added} soal berhasil diimport!`, true);
+        document.getElementById('bulkInput').value = '';
+        refreshStats();
+      } else {
+        showMsg(data.error, false);
+      }
+    })
+    .catch(() => showMsg('Gagal konek ke server', false));
+}
+
+function loadQuestions() {
+  fetch(`${API}/admin/questions?password=${encodeURIComponent(password)}`)
+    .then(r => r.json())
+    .then(data => {
+      const container = document.getElementById('questionList');
+      if (!data.success || !data.questions.length) {
+        container.innerHTML = '<div class="empty">Belum ada soal custom. Tambah soal di tab "Tambah Soal"!</div>';
+        return;
+      }
+      container.innerHTML = data.questions.map(q => `
+        <div class="q-item" id="q-${q.id}">
+          <div class="q-text">
+            <div class="q-question">${q.question}</div>
+            <div class="q-meta">${q.category} · Kesulitan ${q.difficulty} · #${q.id}</div>
+          </div>
+          <div class="q-answer">${q.answer}</div>
+          <div class="q-actions">
+            <button class="btn btn-red" onclick="deleteQuestion(${q.id})">🗑️</button>
+          </div>
+        </div>
+      `).join('');
+    })
+    .catch(() => {
+      document.getElementById('questionList').innerHTML = '<div class="empty">Gagal memuat</div>';
+    });
+}
+
+function deleteQuestion(id) {
+  if (!confirm('Yakin hapus soal ini?')) return;
+  fetch(`${API}/admin/questions/${id}?password=${encodeURIComponent(password)}`, {
+    method: 'DELETE',
+    headers: { 'x-admin-password': password }
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        document.getElementById('q-' + id)?.remove();
+        showMsg('Soal dihapus!', true);
+        refreshStats();
+      }
+    });
+}
+
+function refreshStats() {
+  fetch(`${API}/admin/stats?password=${encodeURIComponent(password)}`)
+    .then(r => r.json())
+    .then(data => { if (data.success) loadStats(data.stats); });
+}
+</script>
+</body>
+</html>

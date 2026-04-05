@@ -1,0 +1,25 @@
+services:
+  game:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - CORS_ORIGINS=${CORS_ORIGINS}
+      - MIKROTIK_HOST=${MIKROTIK_HOST}
+      - MIKROTIK_PORT=${MIKROTIK_PORT}
+      - MIKROTIK_USER=${MIKROTIK_USER}
+      - MIKROTIK_PASSWORD=${MIKROTIK_PASSWORD}
+      - DATABASE_PATH=/app/data/game.db
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
+    volumes:
+      - game-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  game-data:

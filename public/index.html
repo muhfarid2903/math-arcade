@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Math Arcade - Warkopsaja</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Fredoka',sans-serif;background:#0a0a1a;color:#fff;overflow-x:hidden;min-height:100vh}
+input::placeholder{color:rgba(255,255,255,0.3)}
+button{font-family:inherit;cursor:pointer;border:none;outline:none}
+button:active{transform:scale(0.96)!important}
+
+/* Screens */
+.screen{display:none;min-height:100vh;flex-direction:column;align-items:center;padding:20px;position:relative;overflow:hidden}
+.screen.active{display:flex}
+.bg-grid{position:fixed;inset:0;background-image:
+  radial-gradient(circle at 20% 30%,#7C4DFF11,transparent 50%),
+  radial-gradient(circle at 80% 70%,#FF6B3511,transparent 50%),
+  linear-gradient(rgba(255,255,255,0.02) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,0.02) 1px,transparent 1px);
+  background-size:100% 100%,100% 100%,50px 50px,50px 50px;z-index:0;pointer-events:none}
+.content{position:relative;z-index:1;width:100%;max-width:900px;margin:0 auto}
+
+/* Top Bar */
+.top-bar{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;justify-content:space-between;align-items:center;padding:12px 20px;background:rgba(10,10,26,0.85);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.06)}
+.top-bar .logo{font-size:16px;font-weight:700;color:#fff}
+.top-bar .logo span{color:#7C4DFF}
+.top-bar .player-info{display:flex;align-items:center;gap:8px;font-size:14px;color:rgba(255,255,255,0.6)}
+.top-bar .player-info strong{color:#fff}
+.top-bar-spacer{height:52px}
+
+/* Back Button */
+.back-btn{background:rgba(255,255,255,0.07);color:#fff;padding:8px 16px;border-radius:10px;font-size:14px;font-weight:600;transition:all 0.2s}
+.back-btn:hover{background:rgba(255,255,255,0.14)}
+
+/* Login Screen */
+.login-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:40px 32px;max-width:420px;width:100%;text-align:center;margin-top:60px}
+.login-card h1{font-size:36px;margin-bottom:8px;background:linear-gradient(135deg,#7C4DFF,#FF6B35);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-card p{color:rgba(255,255,255,0.5);margin-bottom:28px;font-size:15px}
+.login-card input{width:100%;padding:14px 18px;border-radius:14px;border:2px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.05);color:#fff;font-size:16px;font-family:inherit;margin-bottom:12px;transition:border-color 0.2s}
+.login-card input:focus{outline:none;border-color:#7C4DFF}
+.login-btn{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg,#7C4DFF,#6930C3);color:#fff;font-size:17px;font-weight:700;transition:all 0.2s;margin-top:4px}
+.login-btn:hover{opacity:0.9;transform:translateY(-1px)}
+.wifi-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,191,165,0.12);color:#00BFA5;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;margin-bottom:20px}
+
+/* Menu */
+.menu-header{text-align:center;padding:20px 0 30px}
+.menu-header h2{font-size:28px;font-weight:700}
+.menu-header p{color:rgba(255,255,255,0.4);font-size:14px;margin-top:4px}
+.games-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;padding:0 4px}
+.game-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:24px;cursor:pointer;transition:all 0.25s;position:relative;overflow:hidden}
+.game-card:hover{transform:translateY(-4px);border-color:rgba(255,255,255,0.15);background:rgba(255,255,255,0.06)}
+.game-card .emoji{font-size:36px;margin-bottom:12px;display:block}
+.game-card h3{font-size:18px;font-weight:700;margin-bottom:4px}
+.game-card p{color:rgba(255,255,255,0.4);font-size:13px}
+.game-card .card-accent{position:absolute;top:0;left:0;right:0;height:3px}
+
+/* Rewards Banner */
+.rewards-banner{background:linear-gradient(135deg,rgba(0,191,165,0.1),rgba(124,77,255,0.1));border:1px solid rgba(0,191,165,0.2);border-radius:16px;padding:20px;margin:0 4px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.rewards-banner h3{font-size:16px;font-weight:700;margin-bottom:6px}
+.rewards-banner p{font-size:13px;color:rgba(255,255,255,0.5)}
+.reward-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.reward-tag{background:rgba(255,255,255,0.08);border-radius:8px;padding:4px 10px;font-size:12px;font-weight:600;white-space:nowrap}
+.reward-tag span{color:#00BFA5}
+
+/* Bottom Nav */
+.bottom-nav{display:flex;gap:8px;margin:24px 4px 0;flex-wrap:wrap}
+.bottom-nav button{flex:1;min-width:120px;padding:14px;border-radius:14px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#fff;font-size:14px;font-weight:600;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:8px}
+.bottom-nav button:hover{background:rgba(255,255,255,0.08)}
+
+/* Game Screen */
+.game-top{display:flex;justify-content:space-between;align-items:center;padding:8px 4px 16px;flex-wrap:wrap;gap:8px}
+.game-stats{display:flex;gap:12px}
+.stat-box{background:rgba(255,255,255,0.06);border-radius:12px;padding:8px 14px;text-align:center;min-width:70px}
+.stat-box .label{font-size:11px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px}
+.stat-box .value{font-size:22px;font-weight:700;margin-top:2px}
+.game-area{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:40px 24px;text-align:center;margin:0 4px}
+.question-text{font-size:32px;font-weight:700;margin-bottom:24px;min-height:48px;line-height:1.3}
+.answer-row{display:flex;gap:12px;max-width:360px;margin:0 auto}
+.answer-input{flex:1;padding:16px;border-radius:14px;border:2px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.05);color:#fff;font-size:22px;font-family:inherit;text-align:center;font-weight:700}
+.answer-input:focus{outline:none;border-color:#7C4DFF}
+.submit-btn{padding:16px 24px;border-radius:14px;background:#7C4DFF;color:#fff;font-size:20px;font-weight:700;transition:all 0.15s}
+.submit-btn:hover{background:#6930C3}
+.timer-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.08);margin:20px 4px 0;overflow:hidden}
+.timer-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#00BFA5,#7C4DFF);transition:width 0.3s linear}
+.timer-bar-fill.danger{background:linear-gradient(90deg,#FF4444,#FF6B35)}
+.feedback{font-size:18px;font-weight:600;min-height:28px;margin-top:16px}
+.feedback.correct{color:#00BFA5}
+.feedback.wrong{color:#FF4444}
+.combo-indicator{font-size:14px;color:#FF9100;font-weight:600;margin-top:8px;min-height:20px}
+
+/* Level Up */
+.level-up-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:20px}
+.level-up-overlay.active{display:flex}
+.level-up-card{background:linear-gradient(160deg,#1a1a2e,#16213e);border:1px solid rgba(124,77,255,0.3);border-radius:24px;padding:36px 28px;max-width:400px;width:100%;text-align:center;animation:popIn 0.35s ease}
+@keyframes popIn{from{transform:scale(0.85);opacity:0}to{transform:scale(1);opacity:1}}
+.level-up-card h2{font-size:28px;margin-bottom:8px}
+.level-up-card .level-num{font-size:64px;font-weight:800;background:linear-gradient(135deg,#7C4DFF,#00BFA5);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1}
+.level-up-card p{color:rgba(255,255,255,0.5);margin:8px 0 20px;font-size:14px}
+
+/* Reward Card */
+.reward-card{background:linear-gradient(135deg,rgba(0,191,165,0.15),rgba(124,77,255,0.15));border:1px solid rgba(0,191,165,0.3);border-radius:16px;padding:20px;margin-bottom:20px}
+.reward-card h3{color:#00BFA5;font-size:18px;margin-bottom:4px}
+.reward-card .wifi-time{font-size:28px;font-weight:800;color:#fff;margin:8px 0}
+.claim-btn{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg,#00BFA5,#00897B);color:#fff;font-size:17px;font-weight:700;transition:all 0.2s}
+.claim-btn:hover{opacity:0.9}
+.claim-btn:disabled{opacity:0.5;cursor:not-allowed}
+.continue-btn{width:100%;padding:14px;border-radius:14px;background:rgba(255,255,255,0.08);color:#fff;font-size:15px;font-weight:600;margin-top:8px}
+
+/* Voucher Display */
+.voucher-display{background:rgba(255,255,255,0.06);border:2px dashed rgba(0,191,165,0.4);border-radius:16px;padding:20px;margin:16px 0;text-align:left}
+.voucher-display .vd-label{font-size:12px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px}
+.voucher-display .vd-value{font-size:20px;font-weight:700;font-family:'Courier New',monospace;color:#00BFA5;margin:4px 0 12px}
+.copy-voucher-btn{width:100%;padding:12px;border-radius:12px;background:#00BFA5;color:#fff;font-size:15px;font-weight:700}
+
+/* Game Over */
+.gameover-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:24px;padding:36px 28px;max-width:440px;width:100%;text-align:center;margin-top:40px}
+.gameover-card h2{font-size:26px;margin-bottom:8px}
+.gameover-card .final-score{font-size:56px;font-weight:800;background:linear-gradient(135deg,#FF6B35,#FF9100);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.gameover-stats{display:flex;gap:12px;justify-content:center;margin:16px 0 24px;flex-wrap:wrap}
+.gameover-stats .gs{background:rgba(255,255,255,0.06);border-radius:12px;padding:10px 16px;min-width:80px}
+.gameover-stats .gs .gs-label{font-size:11px;color:rgba(255,255,255,0.4)}
+.gameover-stats .gs .gs-val{font-size:20px;font-weight:700}
+.replay-btn{width:100%;padding:16px;border-radius:14px;background:linear-gradient(135deg,#7C4DFF,#6930C3);color:#fff;font-size:17px;font-weight:700;margin-bottom:10px}
+.home-btn{width:100%;padding:14px;border-radius:14px;background:rgba(255,255,255,0.06);color:#fff;font-size:15px;font-weight:600}
+
+/* Leaderboard */
+.lb-table{width:100%;border-collapse:collapse;margin-top:16px}
+.lb-table th{text-align:left;padding:10px 12px;font-size:12px;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.lb-table td{padding:12px;font-size:14px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.lb-table tr:hover{background:rgba(255,255,255,0.03)}
+.lb-rank{font-weight:700;color:#7C4DFF;width:40px}
+.lb-filter{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.lb-filter button{padding:8px 14px;border-radius:10px;background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.6);font-size:13px;font-weight:600;border:1px solid transparent;transition:all 0.2s}
+.lb-filter button.active{background:rgba(124,77,255,0.15);color:#7C4DFF;border-color:rgba(124,77,255,0.3)}
+
+/* My Vouchers */
+.voucher-list{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.v-item{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.v-item .v-code{font-family:'Courier New',monospace;font-weight:700;color:#00BFA5;font-size:16px}
+.v-item .v-meta{font-size:12px;color:rgba(255,255,255,0.4)}
+.v-item .v-reward{font-weight:600;font-size:14px}
+.v-item .v-status{font-size:12px;padding:3px 10px;border-radius:8px;font-weight:600}
+.v-status.active{background:rgba(0,191,165,0.15);color:#00BFA5}
+.v-status.pending{background:rgba(255,145,0,0.15);color:#FF9100}
+.v-status.failed{background:rgba(255,68,68,0.15);color:#FF4444}
+.v-empty{text-align:center;padding:40px 20px;color:rgba(255,255,255,0.3);font-size:15px}
+
+/* Loading */
+.loading{text-align:center;padding:40px;color:rgba(255,255,255,0.4)}
+.spinner{width:32px;height:32px;border:3px solid rgba(255,255,255,0.1);border-top-color:#7C4DFF;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Responsive */
+@media(max-width:500px){
+  .question-text{font-size:24px}
+  .login-card{padding:28px 20px}
+  .game-area{padding:28px 16px}
+  .games-grid{grid-template-columns:1fr}
+}
+
+/* Answer Display */
+.answer-display{font-size:36px;font-weight:700;min-height:56px;line-height:56px;background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.12);border-radius:14px;margin:0 auto 12px;max-width:240px;color:#fff;text-align:center;letter-spacing:2px}
+.answer-display.has-value{border-color:#7C4DFF;color:#fff}
+
+/* Keypad */
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:360px;margin:16px auto 0;padding:0 4px}
+.key-btn{padding:16px 8px;border-radius:14px;background:rgba(255,255,255,0.08);color:#fff;font-size:22px;font-weight:700;border:1px solid rgba(255,255,255,0.06);transition:all 0.15s;-webkit-tap-highlight-color:transparent;user-select:none}
+.key-btn:hover{background:rgba(255,255,255,0.14)}
+.key-btn:active{background:rgba(124,77,255,0.3)!important;transform:scale(0.94)!important}
+.key-neg{font-size:16px;font-weight:600;color:#FF9100}
+.key-del{font-size:20px;color:#FF4444}
+.key-submit{grid-column:1/-1;background:linear-gradient(135deg,#7C4DFF,#6930C3);font-size:20px;padding:18px;border:none}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<!-- TOP BAR -->
+<div class="top-bar" id="topBar" style="display:none">
+  <div class="logo">🎮 Math<span>Arcade</span></div>
+  <div class="player-info">👤 <strong id="topBarName"></strong></div>
+</div>
+<div class="top-bar-spacer" id="topBarSpacer" style="display:none"></div>
+
+<!-- SCREEN: LOGIN -->
+<div class="screen active" id="screenLogin">
+  <div class="content" style="display:flex;justify-content:center">
+    <div class="login-card">
+      <div class="wifi-badge">📶 Dapat WiFi Gratis!</div>
+      <h1>Math Arcade</h1>
+      <p>Main game matematika, dapat voucher WiFi gratis dari Warkopsaja!</p>
+      <input type="text" id="inputName" placeholder="Ketik nama kamu..." maxlength="30" autocomplete="off">
+      <button class="login-btn" onclick="doLogin()">Mulai Main! 🚀</button>
+      <p style="margin-top:16px;font-size:12px;color:rgba(255,255,255,0.3)">Capai level tertentu untuk dapat WiFi gratis</p>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: MENU -->
+<div class="screen" id="screenMenu">
+  <div class="content">
+    <div class="menu-header">
+      <h2>Math Arcade 🎮</h2>
+      <p>Jawab soal matematika, dapat WiFi gratis!</p>
+    </div>
+
+    <div class="rewards-banner">
+      <div style="flex:1;min-width:200px">
+        <h3>🎁 Reward WiFi Gratis</h3>
+        <p>Soal campuran: bilangan bulat, pecahan, aljabar, dan geometri!</p>
+        <div class="reward-tags">
+          <div class="reward-tag">Lv.3 → <span>1 Jam</span></div>
+          <div class="reward-tag">Lv.5 → <span>3 Jam</span></div>
+          <div class="reward-tag">Lv.7 → <span>6 Jam</span></div>
+          <div class="reward-tag">Lv.10 → <span>12 Jam</span></div>
+        </div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:13px;color:rgba(255,255,255,0.4)">Sisa Hari Ini</div>
+        <div id="dailyRemaining" style="font-size:28px;font-weight:800;color:#00BFA5">-</div>
+      </div>
+    </div>
+
+    <button class="login-btn" style="width:100%;margin:20px 0;padding:20px;font-size:20px;border-radius:16px" onclick="startGame('campuran')">🚀 Mulai Main!</button>
+
+    <div class="bottom-nav">
+      <button onclick="showLeaderboard()">🏆 Leaderboard</button>
+      <button onclick="showMyVouchers()">🎫 Voucher Saya</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: GAME -->
+<div class="screen" id="screenGame">
+  <div class="content">
+    <div class="game-top">
+      <button class="back-btn" onclick="showMenu()">← Keluar</button>
+      <div class="game-stats">
+        <div class="stat-box"><div class="label">Level</div><div class="value" id="gameLevel">1</div></div>
+        <div class="stat-box"><div class="label">Skor</div><div class="value" id="gameScore">0</div></div>
+        <div class="stat-box"><div class="label">Nyawa</div><div class="value" id="gameLives">❤️❤️❤️</div></div>
+      </div>
+    </div>
+    <div class="game-area">
+      <div class="question-text" id="questionText">...</div>
+      <div class="answer-display" id="answerDisplay">?</div>
+      <input type="hidden" id="answerInput" value="">
+      <div class="feedback" id="feedback"></div>
+      <div class="combo-indicator" id="comboIndicator"></div>
+    </div>
+    <div class="timer-bar"><div class="timer-bar-fill" id="timerBar"></div></div>
+    <div class="keypad">
+      <button class="key-btn" onclick="keyPress('1')">1</button>
+      <button class="key-btn" onclick="keyPress('2')">2</button>
+      <button class="key-btn" onclick="keyPress('3')">3</button>
+      <button class="key-btn" onclick="keyPress('4')">4</button>
+      <button class="key-btn" onclick="keyPress('5')">5</button>
+      <button class="key-btn" onclick="keyPress('6')">6</button>
+      <button class="key-btn" onclick="keyPress('7')">7</button>
+      <button class="key-btn" onclick="keyPress('8')">8</button>
+      <button class="key-btn" onclick="keyPress('9')">9</button>
+      <button class="key-btn key-neg" onclick="keyPress('neg')">+/−</button>
+      <button class="key-btn" onclick="keyPress('0')">0</button>
+      <button class="key-btn key-del" onclick="keyPress('del')">⌫</button>
+      <button class="key-btn key-submit" onclick="submitAnswer()">Jawab ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: GAME OVER -->
+<div class="screen" id="screenGameOver">
+  <div class="content" style="display:flex;justify-content:center">
+    <div class="gameover-card">
+      <h2>Game Over! 💥</h2>
+      <div class="final-score" id="finalScore">0</div>
+      <div style="font-size:14px;color:rgba(255,255,255,0.4);margin-top:4px">poin</div>
+      <div class="gameover-stats">
+        <div class="gs"><div class="gs-label">Level</div><div class="gs-val" id="finalLevel">1</div></div>
+        <div class="gs"><div class="gs-label">Benar</div><div class="gs-val" id="finalCorrect">0</div></div>
+        <div class="gs"><div class="gs-label">Combo</div><div class="gs-val" id="finalCombo">0</div></div>
+      </div>
+      <div id="finalRewardInfo"></div>
+      <button class="replay-btn" onclick="startGame(currentGameType)">Main Lagi 🔁</button>
+      <button class="home-btn" onclick="showMenu()">🏠 Menu Utama</button>
+    </div>
+  </div>
+</div>
+
+<!-- SCREEN: LEADERBOARD -->
+<div class="screen" id="screenLeaderboard">
+  <div class="content">
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 4px 16px">
+      <button class="back-btn" onclick="showMenu()">← Kembali</button>
+      <h2 style="font-size:22px">🏆 Leaderboard</h2>
+    </div>
+    <div id="lbContent"><div class="loading"><div class="spinner"></div>Memuat...</div></div>
+  </div>
+</div>
+
+<!-- SCREEN: MY VOUCHERS -->
+<div class="screen" id="screenVouchers">
+  <div class="content">
+    <div style="display:flex;align-items:center;gap:12px;padding:8px 4px 16px">
+      <button class="back-btn" onclick="showMenu()">← Kembali</button>
+      <h2 style="font-size:22px">🎫 Voucher Saya</h2>
+    </div>
+    <div id="voucherContent"><div class="loading"><div class="spinner"></div>Memuat...</div></div>
+  </div>
+</div>
+
+<!-- LEVEL UP OVERLAY -->
+<div class="level-up-overlay" id="levelUpOverlay">
+  <div class="level-up-card" id="levelUpCard"></div>
+</div>
+
+<script>
+// ===== CONFIG =====
+const API_BASE = window.location.origin + '/api/game';
+
+const REWARD_LEVELS = { 3:'1 Jam', 5:'3 Jam', 7:'6 Jam', 10:'12 Jam' };
+
+// ===== DEVICE FINGERPRINT =====
+function generateDeviceId() {
+  const stored = localStorage.getItem('mathArcadeDeviceId');
+  if (stored) return stored;
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.textBaseline = 'top';
+  ctx.font = '14px Arial';
+  ctx.fillText('fingerprint', 2, 2);
+  const canvasData = canvas.toDataURL();
+  const raw = navigator.userAgent + screen.width + screen.height + screen.colorDepth + canvasData + (navigator.language||'') + new Date().getTimezoneOffset();
+  let hash = 0;
+  for (let i = 0; i < raw.length; i++) {
+    const c = raw.charCodeAt(i);
+    hash = ((hash << 5) - hash) + c;
+    hash |= 0;
+  }
+  const id = 'DEV-' + Math.abs(hash).toString(36).toUpperCase().substring(0, 12);
+  localStorage.setItem('mathArcadeDeviceId', id);
+  return id;
+}
+const deviceId = generateDeviceId();
+
+// ===== STATE =====
+let playerName = '';
+let currentGameType = '';
+let gameToken = '';
+let score = 0, level = 1, lives = 3, combo = 0, maxCombo = 0, correctCount = 0;
+let currentAnswer = 0;
+let timerInterval = null;
+let timeLeft = 0;
+let questionsInLevel = 0;
+let questionsNeeded = 5;
+let claimedThisGame = new Set();
+
+// ===== LOGIN =====
+function doLogin() {
+  const name = document.getElementById('inputName').value.trim();
+  if (!name) { document.getElementById('inputName').focus(); return; }
+  playerName = name.substring(0, 30);
+  localStorage.setItem('mathArcadePlayer', playerName);
+  document.getElementById('topBarName').textContent = playerName;
+  document.getElementById('topBar').style.display = 'flex';
+  document.getElementById('topBarSpacer').style.display = 'block';
+  showMenu();
+}
+
+// Check saved player
+(function() {
+  const saved = localStorage.getItem('mathArcadePlayer');
+  if (saved) {
+    playerName = saved;
+    document.getElementById('inputName').value = saved;
+  }
+  document.getElementById('inputName').addEventListener('keyup', e => { if (e.key === 'Enter') doLogin(); });
+})();
+
+// ===== SCREENS =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showMenu() {
+  showScreen('screenMenu');
+  clearInterval(timerInterval);
+  loadDailyRemaining();
+}
+
+async function loadDailyRemaining() {
+  try {
+    const res = await fetch(`${API_BASE}/my-vouchers?player_name=${encodeURIComponent(playerName)}&device_id=${encodeURIComponent(deviceId)}`);
+    const data = await res.json();
+    document.getElementById('dailyRemaining').textContent = data.daily_remaining ?? '-';
+    if (data.cooldown_remaining_minutes > 0) {
+      document.getElementById('dailyRemaining').textContent = '⏳';
+    }
+  } catch { document.getElementById('dailyRemaining').textContent = '3'; }
+}
+
+// ===== QUESTION GENERATORS =====
+function genInteger(diff) {
+  const ops = ['+','-','×'];
+  if (diff >= 3) ops.push('÷');
+  const op = ops[Math.floor(Math.random() * ops.length)];
+  let a, b, ans;
+  const range = Math.min(5 + diff * 3, 50);
+  switch (op) {
+    case '+': a = Math.floor(Math.random()*range) - Math.floor(range/3); b = Math.floor(Math.random()*range) - Math.floor(range/3); ans = a + b; break;
+    case '-': a = Math.floor(Math.random()*range); b = Math.floor(Math.random()*range); ans = a - b; break;
+    case '×': a = Math.floor(Math.random()*Math.min(range,12))+1; b = Math.floor(Math.random()*Math.min(range,12))+1; ans = a * b; break;
+    case '÷': b = Math.floor(Math.random()*10)+2; ans = Math.floor(Math.random()*10)+1; a = b * ans; break;
+  }
+  const display = op === '×' ? '×' : op === '÷' ? '÷' : op;
+  return { text: `${a} ${display} ${b} = ?`, answer: ans };
+}
+
+function genFraction(diff) {
+  const d1 = [2,3,4,5,6,8,10][Math.floor(Math.random()*Math.min(3+diff,7))];
+  const n1 = Math.floor(Math.random()*(d1-1))+1;
+  if (diff < 3) {
+    const mult = Math.floor(Math.random()*5)+2;
+    return { text: `${n1}/${d1} = ?/${d1*mult}`, answer: n1 * mult };
+  }
+  const d2 = d1;
+  const n2 = Math.floor(Math.random()*(d2-1))+1;
+  const op = Math.random() > 0.5 ? '+' : '-';
+  const ans = op === '+' ? n1 + n2 : n1 - n2;
+  return { text: `${n1}/${d1} ${op} ${n2}/${d2} = ?/${d1}`, answer: ans };
+}
+
+function genAlgebra(diff) {
+  const x = Math.floor(Math.random()*15) - (diff > 4 ? 5 : 0) + 1;
+  const a = Math.floor(Math.random()*Math.min(diff+2,10))+1;
+  const b = Math.floor(Math.random()*20) - 5;
+  const result = a * x + b;
+  if (diff < 4) return { text: `${a}x + ${b} = ${result}, x = ?`, answer: x };
+  const c = Math.floor(Math.random()*5)+1;
+  const r2 = a * x + b + c * x;
+  return { text: `${a}x + ${c}x + ${b} = ${r2}, x = ?`, answer: x };
+}
+
+function genGeometry(diff) {
+  const shapes = ['persegi','persegi panjang','segitiga'];
+  if (diff >= 4) shapes.push('lingkaran');
+  const shape = shapes[Math.floor(Math.random()*shapes.length)];
+  let text, answer;
+  switch (shape) {
+    case 'persegi': { const s = Math.floor(Math.random()*12)+2;
+      if (Math.random()>0.5) { text = `Luas persegi sisi ${s} = ?`; answer = s*s; }
+      else { text = `Keliling persegi sisi ${s} = ?`; answer = 4*s; } break; }
+    case 'persegi panjang': { const p = Math.floor(Math.random()*12)+3; const l = Math.floor(Math.random()*8)+2;
+      if (Math.random()>0.5) { text = `Luas persegi panjang ${p}×${l} = ?`; answer = p*l; }
+      else { text = `Keliling persegi panjang ${p}×${l} = ?`; answer = 2*(p+l); } break; }
+    case 'segitiga': { const base = Math.floor(Math.random()*12)+2; const h = Math.floor(Math.random()*10)+2;
+      text = `Luas segitiga alas ${base}, tinggi ${h} = ?`; answer = (base*h)/2; break; }
+    case 'lingkaran': { const r = Math.floor(Math.random()*7)+2;
+      text = `Luas lingkaran r=${r} (π=3.14) ≈ ?`; answer = Math.round(3.14*r*r); break; }
+  }
+  return { text, answer: Math.round(answer) };
+}
+
+// ===== KEYPAD =====
+let answerStr = '';
+
+function keyPress(key) {
+  if (key === 'del') {
+    answerStr = answerStr.slice(0, -1);
+  } else if (key === 'neg') {
+    if (answerStr.startsWith('-')) {
+      answerStr = answerStr.substring(1);
+    } else {
+      answerStr = '-' + answerStr;
+    }
+  } else {
+    if (answerStr.length < 8) {
+      answerStr += key;
+    }
+  }
+  const display = document.getElementById('answerDisplay');
+  display.textContent = answerStr || '?';
+  display.className = 'answer-display' + (answerStr ? ' has-value' : '');
+  document.getElementById('answerInput').value = answerStr;
+}
+
+// ===== CUSTOM QUESTIONS =====
+let customQuestions = [];
+
+async function loadCustomQuestions() {
+  try {
+    const res = await fetch(`${API_BASE}/custom-questions?limit=30&difficulty=${Math.min(level, 3)}`);
+    const data = await res.json();
+    if (data.success) customQuestions = data.questions;
+  } catch { customQuestions = []; }
+}
+
+function generateQuestion() {
+  // 40% chance custom question if available
+  if (customQuestions.length > 0 && Math.random() < 0.4) {
+    const q = customQuestions[Math.floor(Math.random() * customQuestions.length)];
+    currentAnswer = q.answer;
+    document.getElementById('questionText').textContent = q.question;
+  } else {
+    const generators = [genInteger, genFraction, genAlgebra, genGeometry];
+    const gen = generators[Math.floor(Math.random() * generators.length)];
+    const q = gen(level);
+    currentAnswer = q.answer;
+    document.getElementById('questionText').textContent = q.text;
+  }
+  answerStr = '';
+  document.getElementById('answerDisplay').textContent = '?';
+  document.getElementById('answerDisplay').className = 'answer-display';
+  document.getElementById('answerInput').value = '';
+}
+
+// ===== GAME LOOP =====
+async function startGame(gameType) {
+  currentGameType = gameType;
+  score = 0; level = 1; lives = 3; combo = 0; maxCombo = 0; correctCount = 0;
+  questionsInLevel = 0; questionsNeeded = 5;
+  claimedThisGame = new Set();
+  gameToken = '';
+  
+  // Get game session token from server
+  try {
+    const res = await fetch(`${API_BASE}/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_name: playerName, game_type: gameType, device_id: deviceId })
+    });
+    const data = await res.json();
+    if (data.success) {
+      gameToken = data.token;
+    }
+  } catch (err) {
+    console.error('Failed to start session:', err);
+  }
+  
+  // Load custom questions
+  await loadCustomQuestions();
+  
+  updateGameUI();
+  showScreen('screenGame');
+  generateQuestion();
+  startTimer();
+}
+
+function updateGameUI() {
+  document.getElementById('gameLevel').textContent = level;
+  document.getElementById('gameScore').textContent = score;
+  document.getElementById('gameLives').textContent = '❤️'.repeat(Math.max(lives,0));
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('feedback').className = 'feedback';
+  const ci = document.getElementById('comboIndicator');
+  ci.textContent = combo >= 3 ? `🔥 Combo ×${combo}!` : '';
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = Math.max(15 - level, 5);
+  const total = timeLeft;
+  const bar = document.getElementById('timerBar');
+  bar.style.width = '100%';
+  bar.classList.remove('danger');
+  timerInterval = setInterval(() => {
+    timeLeft -= 0.1;
+    const pct = Math.max(0, (timeLeft / total) * 100);
+    bar.style.width = pct + '%';
+    if (pct < 25) bar.classList.add('danger');
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      wrongAnswer();
+    }
+  }, 100);
+}
+
+function submitAnswer() {
+  if (answerStr === '' || answerStr === '-') return;
+  clearInterval(timerInterval);
+  const num = parseFloat(answerStr);
+  if (Math.abs(num - currentAnswer) < 0.01) {
+    correctAnswer();
+  } else {
+    wrongAnswer();
+  }
+}
+
+function correctAnswer() {
+  combo++;
+  if (combo > maxCombo) maxCombo = combo;
+  correctCount++;
+  const bonus = combo >= 5 ? 3 : combo >= 3 ? 2 : 1;
+  const points = (10 + level * 5) * bonus;
+  score += points;
+  questionsInLevel++;
+
+  const fb = document.getElementById('feedback');
+  fb.textContent = `✅ Benar! +${points}` + (bonus > 1 ? ` (×${bonus})` : '');
+  fb.className = 'feedback correct';
+  updateGameUI();
+
+  if (questionsInLevel >= questionsNeeded) {
+    level++;
+    questionsInLevel = 0;
+    questionsNeeded = Math.min(5 + level, 10);
+
+    // Check if this level has reward
+    if (REWARD_LEVELS[level - 1] && !claimedThisGame.has(level - 1)) {
+      showLevelUp(level, true);
+      return;
+    } else if (level % 2 === 0) {
+      showLevelUp(level, false);
+      return;
+    }
+  }
+
+  setTimeout(() => { generateQuestion(); startTimer(); }, 600);
+}
+
+function wrongAnswer() {
+  combo = 0;
+  lives--;
+  const fb = document.getElementById('feedback');
+  fb.textContent = `❌ Salah! Jawaban: ${currentAnswer}`;
+  fb.className = 'feedback wrong';
+  updateGameUI();
+
+  if (lives <= 0) {
+    setTimeout(() => gameOver(), 1000);
+  } else {
+    setTimeout(() => { generateQuestion(); startTimer(); }, 1200);
+  }
+}
+
+// ===== LEVEL UP / REWARD =====
+function showLevelUp(newLevel, hasReward) {
+  const rewardLevel = newLevel - 1;
+  const card = document.getElementById('levelUpCard');
+
+  let rewardHTML = '';
+  if (hasReward) {
+    rewardHTML = `
+      <div class="reward-card">
+        <h3>🎁 Reward Tersedia!</h3>
+        <div class="wifi-time">WiFi ${REWARD_LEVELS[rewardLevel]}</div>
+        <p style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:12px">Klaim sekarang untuk dapat voucher WiFi gratis!</p>
+        <button class="claim-btn" id="claimBtn" onclick="claimReward(${rewardLevel})">📶 Klaim WiFi ${REWARD_LEVELS[rewardLevel]}!</button>
+        <div id="claimResult" style="margin-top:12px"></div>
+      </div>
+    `;
+  }
+
+  card.innerHTML = `
+    <h2>Level Up! 🎉</h2>
+    <div class="level-num">${newLevel}</div>
+    <p>Soal makin menantang — kamu siap?</p>
+    ${rewardHTML}
+    <button class="continue-btn" onclick="closeLevelUp()">Lanjut Main →</button>
+  `;
+
+  document.getElementById('levelUpOverlay').classList.add('active');
+}
+
+function closeLevelUp() {
+  document.getElementById('levelUpOverlay').classList.remove('active');
+  generateQuestion();
+  startTimer();
+}
+
+async function claimReward(rewardLevel) {
+  const btn = document.getElementById('claimBtn');
+  const result = document.getElementById('claimResult');
+  btn.disabled = true;
+  btn.textContent = '⏳ Memproses...';
+  result.innerHTML = '';
+
+  try {
+    const res = await fetch(`${API_BASE}/claim`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        player_name: playerName,
+        level: rewardLevel,
+        score: score,
+        game_type: currentGameType,
+        device_id: deviceId,
+        token: gameToken
+      })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      claimedThisGame.add(rewardLevel);
+      const v = data.voucher;
+      let cooldownMsg = data.cooldown_minutes ? `<p style="font-size:12px;color:#FF9100;margin-top:8px">⏱️ Cooldown ${data.cooldown_minutes} menit sebelum klaim berikutnya</p>` : '';
+      result.innerHTML = `
+        <div class="voucher-display">
+          <div class="vd-label">Username & Password</div>
+          <div class="vd-value">${v.code}</div>
+          <div class="vd-label">Durasi</div>
+          <div class="vd-value">${v.reward}</div>
+          <button class="copy-voucher-btn" onclick="copyVoucher('${v.code}', this)">📋 Salin Kode</button>
+        </div>
+        <p style="font-size:12px;color:rgba(255,255,255,0.4);margin-top:8px">Sisa voucher hari ini: ${data.daily_remaining}</p>
+        ${cooldownMsg}
+      `;
+      btn.style.display = 'none';
+    } else {
+      btn.disabled = false;
+      btn.textContent = `📶 Klaim WiFi ${REWARD_LEVELS[rewardLevel]}!`;
+      result.innerHTML = `<p style="color:#FF9100;font-size:14px">${data.error}</p>`;
+    }
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = `📶 Klaim WiFi ${REWARD_LEVELS[rewardLevel]}!`;
+    result.innerHTML = `<p style="color:#FF4444;font-size:14px">Gagal konek ke server. Coba lagi nanti.</p>`;
+  }
+}
+
+function copyVoucher(code, btn) {
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = '✅ Tersalin!';
+    setTimeout(() => { btn.textContent = '📋 Salin Kode'; }, 2000);
+  });
+}
+
+// ===== GAME OVER =====
+async function gameOver() {
+  clearInterval(timerInterval);
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('finalLevel').textContent = level;
+  document.getElementById('finalCorrect').textContent = correctCount;
+  document.getElementById('finalCombo').textContent = maxCombo;
+
+  // Check if any unclaimed rewards available
+  let rewardInfo = '';
+  for (const [lv, label] of Object.entries(REWARD_LEVELS)) {
+    if (parseInt(lv) < level && !claimedThisGame.has(parseInt(lv))) {
+      rewardInfo += `<button class="claim-btn" style="margin:4px 0;font-size:14px;padding:12px" onclick="claimFromGameOver(${lv})">🎁 Klaim WiFi ${label} (Level ${lv})</button>`;
+    }
+  }
+  document.getElementById('finalRewardInfo').innerHTML = rewardInfo ? '<div style="margin:12px 0">' + rewardInfo + '</div>' : '';
+
+  // Save score
+  try {
+    await fetch(`${API_BASE}/save-score`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_name: playerName, level, score, game_type: currentGameType })
+    });
+  } catch {}
+
+  showScreen('screenGameOver');
+}
+
+async function claimFromGameOver(rewardLevel) {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = '⏳ Memproses...';
+  try {
+    const res = await fetch(`${API_BASE}/claim`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ player_name: playerName, level: rewardLevel, score, game_type: currentGameType, device_id: deviceId, token: gameToken })
+    });
+    const data = await res.json();
+    if (data.success) {
+      claimedThisGame.add(rewardLevel);
+      let cooldownMsg = data.cooldown_minutes ? `<p style="font-size:11px;color:#FF9100">⏱️ Cooldown ${data.cooldown_minutes} menit</p>` : '';
+      btn.outerHTML = `<div class="voucher-display"><div class="vd-label">Voucher</div><div class="vd-value">${data.voucher.code}</div><div class="vd-label">${data.voucher.reward}</div><button class="copy-voucher-btn" onclick="copyVoucher('${data.voucher.code}', this)">📋 Salin</button></div>${cooldownMsg}`;
+    } else {
+      btn.textContent = data.error;
+      btn.style.background = 'rgba(255,68,68,0.2)';
+      btn.style.color = '#FF4444';
+    }
+  } catch {
+    btn.textContent = 'Gagal, coba lagi';
+    btn.disabled = false;
+  }
+}
+
+// ===== LEADERBOARD =====
+async function showLeaderboard() {
+  showScreen('screenLeaderboard');
+  loadLeaderboard('all');
+}
+
+async function loadLeaderboard(gameType) {
+  const container = document.getElementById('lbContent');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div>Memuat...</div>';
+  try {
+    const res = await fetch(`${API_BASE}/leaderboard?game_type=${gameType}&limit=20`);
+    const data = await res.json();
+    if (!data.success || !data.leaderboard.length) {
+      container.innerHTML = '<div class="v-empty">Belum ada data. Jadilah yang pertama!</div>';
+      return;
+    }
+    const medals = ['🥇','🥈','🥉'];
+    container.innerHTML = `<table class="lb-table"><thead><tr><th>#</th><th>Pemain</th><th>Skor</th><th>Level</th><th>Main</th></tr></thead><tbody>${
+      data.leaderboard.map((r,i) => `<tr><td class="lb-rank">${medals[i]||i+1}</td><td>${r.player_name}</td><td style="font-weight:700">${r.best_score}</td><td>${r.best_level}</td><td>${r.games_played}×</td></tr>`).join('')
+    }</tbody></table>`;
+  } catch {
+    container.innerHTML = '<div class="v-empty">Gagal memuat leaderboard</div>';
+  }
+}
+
+// ===== MY VOUCHERS =====
+async function showMyVouchers() {
+  showScreen('screenVouchers');
+  const container = document.getElementById('voucherContent');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div>Memuat...</div>';
+  try {
+    const res = await fetch(`${API_BASE}/my-vouchers?player_name=${encodeURIComponent(playerName)}&device_id=${encodeURIComponent(deviceId)}`);
+    const data = await res.json();
+    if (!data.success || !data.vouchers.length) {
+      container.innerHTML = `<div class="v-empty">Belum ada voucher.<br>Main game dan capai level 3 untuk dapat yang pertama!</div>`;
+      return;
+    }
+    container.innerHTML = `
+      <p style="font-size:14px;color:rgba(255,255,255,0.4);margin-bottom:8px">Voucher hari ini: ${data.daily_used}/${data.daily_limit}</p>
+      ${data.cooldown_remaining_minutes > 0 ? `<p style="font-size:14px;color:#FF9100;margin-bottom:12px">⏱️ Cooldown: ${data.cooldown_remaining_minutes} menit lagi sebelum bisa klaim</p>` : ''}
+      <div class="voucher-list">${data.vouchers.map(v => `
+        <div class="v-item">
+          <div>
+            <div class="v-code">${v.code}</div>
+            <div class="v-meta">${v.created_at} · Level ${v.level}</div>
+          </div>
+          <div style="text-align:right">
+            <div class="v-reward">${v.reward_label}</div>
+            <span class="v-status ${v.status}">${v.status === 'active' ? '✅ Aktif' : v.status === 'pending' ? '⏳ Pending' : '❌ Gagal'}</span>
+          </div>
+        </div>
+      `).join('')}</div>`;
+  } catch {
+    container.innerHTML = '<div class="v-empty">Gagal memuat voucher</div>';
+  }
+}
+
+// Physical keyboard support
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('screenGame').classList.contains('active')) return;
+  if (e.key >= '0' && e.key <= '9') { keyPress(e.key); e.preventDefault(); }
+  else if (e.key === '-') { keyPress('neg'); e.preventDefault(); }
+  else if (e.key === 'Backspace') { keyPress('del'); e.preventDefault(); }
+  else if (e.key === 'Enter') { submitAnswer(); e.preventDefault(); }
+});
+</script>
+</body>
+</html>
